@@ -61,7 +61,7 @@ export const mediaGridSvg = (items: readonly OdorokiyaMedia[], width: number): s
   const n = Math.min(items.length, 4)
   if (n === 0) return ''
   const first = items[0]
-  const ratio = n === 1 && first && first.w && first.h ? Math.min(1.25, Math.max(0.5625, first.h / first.w)) : 0.5625
+  const ratio = n === 1 && first && first.width && first.height ? Math.min(1.25, Math.max(0.5625, first.height / first.width)) : 0.5625
   const h = Math.round(width * ratio)
   const g = 2
   const half = (width - g) / 2

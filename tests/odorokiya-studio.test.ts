@@ -44,7 +44,7 @@ test('下書きツールでパネルに本文と素材が入り、各サーフ�
   on('fs.stat', () => ({ value: { kind: 'file', size: 2048, mtimeMs: 0, isLink: false } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('ui.render', () => h('Text', {}, 'engine'))
-  on('process.run', () => ({ value: { exitCode: 0, stdout: '{"ok": true, "b64": "AAAA", "w": 10, "h": 10, "duration": null}', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '{"ok": true, "b64": "AAAA", "width": 10, "height": 10, "duration": null}', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
   await $.tool.call({ tool: 'mcp__odorokiya-studio__draft', text: 'これ全部Claudeが作った', media: ['/tmp/a.png'] } as never)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({

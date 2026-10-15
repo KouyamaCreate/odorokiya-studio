@@ -7,7 +7,7 @@
 作業用の一時フォルダは作成後すぐ消す。動画の長さはファイルの mvhd を読んで求める。
 
 使い方:
-  media.py thumb PATH [--size N]  -> {"ok": true, "b64": "<jpeg>", "w": W, "h": H, "duration": 秒|null}
+  media.py thumb PATH [--size N]  -> {"ok": true, "b64": "<jpeg>", "width": W, "height": H, "duration": 秒|null}
 結果は常に JSON 1 行を stdout に出す。標準ライブラリのみ。
 """
 import argparse
@@ -108,7 +108,7 @@ def cmd_thumb(args):
         with open(out, "rb") as f:
             data = f.read()
         w, h = jpeg_size(data)
-        return {"ok": True, "b64": base64.b64encode(data).decode(), "w": w, "h": h, "duration": duration}
+        return {"ok": True, "b64": base64.b64encode(data).decode(), "width": w, "height": h, "duration": duration}
     finally:
         shutil.rmtree(work, ignore_errors=True)
 

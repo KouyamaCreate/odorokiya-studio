@@ -1,7 +1,7 @@
 {
   "name": "odorokiya-studio",
   "displayName": "Odorokiya Studio",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "TL を開かずに、会話から驚き屋ツイートを下書き・推敲し、セッションで作った画像や動画を添えて X に投稿する Claude Code の Mod。",
   "author": {
     "name": "Kosei Yamamoto",

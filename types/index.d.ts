@@ -6,8 +6,8 @@ export type OdorokiyaMedia = {
   at: number
   /** 200px の JPEG サムネイル(base64)。作れなかったときは無し */
   thumb?: string
-  w?: number
-  h?: number
+  width?: number
+  height?: number
   /** 動画の長さ(秒) */
   duration?: number | null
 }

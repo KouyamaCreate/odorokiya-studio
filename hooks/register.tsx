@@ -155,7 +155,8 @@ const addMedia = (found: readonly OdorokiyaMedia[]) => (list: OdorokiyaMedia[]) 
   return merged.map((m, i) => (i < merged.length - MAX_THUMBS && m.thumb ? { ...m, thumb: undefined } : m))
 }
 
-type Thumb = { ok: boolean; b64?: string; w?: number; h?: number; duration?: number | null }
+// 高さと幅は width / height と書く(.tsx では h という名前を要素作成の関数にしか使えないため)
+type Thumb = { ok: boolean; b64?: string; width?: number; height?: number; duration?: number | null }
 const parseThumb = (stdout: string): Thumb => {
   try {
     return JSON.parse(stdout.trim().split('\n').pop() ?? '')
@@ -164,7 +165,7 @@ const parseThumb = (stdout: string): Thumb => {
   }
 }
 const withThumb = (m: OdorokiyaMedia, t: Thumb): OdorokiyaMedia =>
-  t.ok && t.b64 ? { ...m, thumb: t.b64, w: t.w, h: t.h, duration: t.duration ?? null } : m
+  t.ok && t.b64 ? { ...m, thumb: t.b64, width: t.width, height: t.height, duration: t.duration ?? null } : m
 
 const shortName = (name: string, max = 14) => (name.length <= max ? name : `${name.slice(0, max - 5)}…${name.slice(-4)}`)
 
