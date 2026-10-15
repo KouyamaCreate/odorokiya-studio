@@ -1,5 +1,9 @@
 # 変更履歴
 
+## 0.3.4 - 2026-10-16
+
+- プライバシーポリシー `PRIVACY.md` を追加し、README に Privacy の節、plugin.json に `privacyPolicyUrl` を追加
+
 ## 0.3.3 - 2026-10-16
 
 - 画像の幅と高さの項目名を `w` / `h` から `width` / `height` に変更。`.tsx` の中で `h` という名前は JSX の要素作成にしか使えないという、プラグインディレクトリの規則(MOD_CAPABILITY_USE_NOT_PLAIN)に合わせた

@@ -1,7 +1,7 @@
 {
   "name": "odorokiya-studio",
   "displayName": "Odorokiya Studio",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "TL を開かずに、会話から驚き屋ツイートを下書き・推敲し、セッションで作った画像や動画を添えて X に投稿する Claude Code の Mod。",
   "author": {
     "name": "Kosei Yamamoto",
@@ -10,6 +10,7 @@
   "homepage": "https://github.com/KouyamaCreate/odorokiya-studio",
   "repository": "https://github.com/KouyamaCreate/odorokiya-studio",
   "license": "MIT",
+  "privacyPolicyUrl": "https://github.com/KouyamaCreate/odorokiya-studio/blob/main/PRIVACY.md",
   "keywords": [
     "x",
     "twitter",
