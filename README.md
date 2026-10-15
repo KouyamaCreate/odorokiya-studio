@@ -99,38 +99,77 @@ for k in consumer_key consumer_secret access_token access_token_secret; do print
 
 ## この Mod が実行するもの、送るもの、読むもの
 
-公開ディレクトリの審査と利用者の確認のため、すべて書いておきます。
+公開ディレクトリの審査と利用者の確認のため、すべて書いておきます。英語の要約は下の「For reviewers」にあります。
 
-**外部への送信**
+### フック
 
-- `https://api.x.com` だけに送ります。使うのは次のエンドポイントです。
-  - `GET /2/users/me`(認証確認と投稿後の URL 作成)
-  - `POST /2/media/upload/initialize`、`/2/media/upload/{id}/append`、`/2/media/upload/{id}/finalize`、`GET /2/media/upload?command=STATUS`(添付ファイルのアップロード)
+| フック | していること |
+| --- | --- |
+| `session.start` | コマンド 3 つ(`/odorokiya-studio`、`/odorokiya-studio-check`、`/odorokiya-studio-security`)と、Claude が使う下書きツール `draft` を登録する |
+| `tool.call`(すべてのツール) | ツールを実行させ(`next` を呼ぶ)、その結果を**変えずに**返す。返す前に、ツールの入力と出力に出てきた画像・動画のパスを集め、ファイルがあれば素材一覧に加え、`scripts/media.py` でサムネイルを作る。一時フォルダのファイルは集めない |
+| `tool.call`(Bash) | コマンドがこの Mod の鍵を読み出すもの(キーチェーンのこの Mod の項目を読む `security` コマンド、`ODOROKIYA_X_` で始まる環境変数の参照、`security dump-keychain`)のときだけ、実行せずに拒否する。それ以外は `next` の結果をそのまま返す。Bash の代わりに答えるのは、この場合だけ |
+| `tool.call`(`mcp__odorokiya-studio__draft`) | この Mod 自身のツール。渡された本文と添付をパネルに入れる。投稿はしない |
+| `command.run`(上の 3 コマンド) | この Mod 自身のコマンド。パネルを開く、接続を確かめる、SECURITY.md を表示する |
+| `ui.render`(`AbovePrompt`) | 入力欄の上に「驚き屋チャンス」の帯を描く。素材がない、隠した、設定でオフ、アンケート表示中のときは何もしない(`next` を返す) |
+| `ui.render`(`Pane`) | 驚き屋スタジオのパネルを描く |
+
+他のプラグインを呼んだり、他のプラグインに頼ったりはしません。
+
+### 外への送信
+
+- **X API**: `https://api.x.com` だけ。本人が「投稿する」「接続を確認」「保存して接続テスト」を押したときに、`scripts/odorokiya.py` が送ります。送るのは本文、選んだ添付ファイル、OAuth 1.0a の署名です。鍵そのものは送りません。
+  - `GET /2/users/me`(接続の確認と、投稿後の URL 作成)
+  - `POST /2/media/upload/initialize`、`POST /2/media/upload/{id}/append`、`POST /2/media/upload/{id}/finalize`、`GET /2/media/upload?command=STATUS`(添付のアップロード)
   - `POST /2/tweets`(投稿)
-- 送るのは、本人が投稿ボタンを押したときの本文と選んだ添付ファイル、そして認証の確認に必要な署名だけです。
-- 下書きと推敲の文章は、Claude Code 自身のモデル呼び出し(`$.model.fork` と `$.model.complete`)で作ります。会話の内容はこの経路で Claude に渡ります。X 以外の第三者には送りません。
+- **Claude(Anthropic)**: 「会話から下書き」は `$.model.fork`、推敲は `$.model.complete` を使います。どちらも Claude Code 自身のモデル呼び出しで、会話の内容と本文がこの経路で Claude に渡ります。
+- **クリップボード**: `$.ui.copy` で、Callback URI(`http://127.0.0.1/callback`)か投稿の URL を、ボタンを押したときだけコピーします。
+- **通知**: 投稿が終わったとき、`$.ui.notify` で macOS の通知を 1 回出します。
 
-**手元で実行するコマンド**
+ここに書いた以外の宛先には送りません。ダウンロードもしません。X API の返事は JSON として読むだけで、実行することはありません。
 
-すべて `scripts/odorokiya.py` から、シェルを通さずに実行します。
+### 動かすプログラムと理由
 
-- `/usr/bin/python3 -I scripts/odorokiya.py`(補助スクリプト本体。Python 標準ライブラリだけを使い、追加のパッケージは入れません)
-- `/usr/bin/sips`(画像を 320px の JPEG サムネイルにする)
-- `/usr/bin/qlmanage`(動画の 1 コマを取り出す)
-- `/usr/bin/mdls` と、入っていれば `ffprobe`(動画の長さを読む)
-- `/usr/bin/security find-generic-password`(キーチェーンから鍵を読む)
-- `/usr/bin/security -i`(パネルで入れた鍵をキーチェーンに保存する。鍵は標準入力で渡す)
-- `/usr/bin/security delete-generic-password`(「読むたびに確認」をオンにして保存し直すとき、古い項目を消す)
+Mod は `$.process.run` で、シェルを通さずに次のコマンドだけを動かします(`<plugin>` は Mod のフォルダ)。
 
-**Claude Code の中で止めるもの**
+| コマンド | 理由 |
+| --- | --- |
+| `/usr/bin/python3 -I <plugin>/scripts/odorokiya.py check` | X とつながっているか確かめる |
+| `/usr/bin/python3 -I <plugin>/scripts/odorokiya.py save-keys`(鍵は標準入力) | パネルで入れた鍵をキーチェーンに保存し、接続を確かめる |
+| `/usr/bin/python3 -I <plugin>/scripts/odorokiya.py post --text <本文> [--media <添付のパス>]...` | 投稿する |
+| `/usr/bin/python3 -I <plugin>/scripts/media.py thumb <素材のパス> --size 320` | パネルに出すサムネイルを作る |
 
-- Claude が Bash で、この Mod の鍵をキーチェーンや環境変数から読み出すコマンド(`security find-generic-password -s odorokiya-studio` など)を実行しようとしたときは、`tool.call` フックで拒否します
+2 つのスクリプトは、Python の標準ライブラリだけを使い、追加のパッケージは入れません。その中で動かすのは、macOS に入っている次のプログラムだけです(どれも決まったパスと決まった引数)。
 
-**読むもの、保存するもの**
+| プログラム | どこから | 理由 |
+| --- | --- | --- |
+| `/usr/bin/security`(`find-generic-password`) | odorokiya.py | キーチェーンのこの Mod の項目(service `odorokiya-studio`、旧名 `x-post`)から鍵を読む |
+| `/usr/bin/security -i`(命令は標準入力) | odorokiya.py | 鍵をキーチェーンに保存する |
+| `/usr/bin/security`(`delete-generic-password`) | odorokiya.py | 「読むたびに確認」で保存し直すとき、この Mod の古い項目を消す |
+| `/usr/bin/sips` | media.py | 画像を 320px の JPEG に縮める |
+| `/usr/bin/qlmanage -t` | media.py | 動画の 1 コマを取り出す |
 
-- セッション中のツール入出力に出てきたパスのうち、メディアの拡張子を持つファイルの情報(存在、大きさ)
-- 素材の一覧、サムネイル、下書きは、そのセッションの間だけ Claude Code の state に保持します。ディスクには書きません(サムネイル作成時の一時ファイルは、作成後すぐ消します)
+media.py はネットワークを使いません。一時フォルダは作成後すぐ消します。動画の長さはファイルの中身(mp4 / mov の `mvhd`)を読んで求めます。
+
+### 鍵を利用者のマシンから読む理由
+
+鍵を渡す方法として推奨しているのは、プラグインの設定画面(`userConfig`、`sensitive: true`)です。設定画面に鍵があるときは、キーチェーンは読みません。
+
+キーチェーンを読むのは、利用者が自分でパネルの「保存して接続テスト」か SECURITY.md の手順で、この Mod 用の項目(service `odorokiya-studio`)を作った場合だけです。理由は、接続の手順をパネルの中で終えられるようにするためです。設定画面の項目は Mod から書き込めないので、パネルから保存できる先としてキーチェーンを使っています。他のアプリの鍵や、利用者の環境変数は読みません。
+
+### 読むもの、保存するもの
+
+- セッション中のツール入出力に出てきたパスのうち、画像・動画の拡張子を持つファイルの有無と大きさ。一時フォルダ(`/tmp`、`/var/folders`)のものは読みません
+- `SECURITY.md`(この Mod のフォルダの中。説明を表示するときだけ)
+- 素材の一覧、サムネイル、下書きは、そのセッションの間だけ Claude Code の state に持ちます。ディスクには書きません。入力中の鍵は state にも置きません
 - TL、通知、DM、他人の投稿は読みません
+
+### For reviewers
+
+- Hooks: `session.start` registers three commands and the mod's own `draft` tool. `tool.call` (all tools) always returns `next`'s result unchanged; it only reads tool inputs and outputs for media paths outside temp folders and makes thumbnails. `tool.call` (Bash) denies only commands that read this mod's own X keys from the keychain or environment, and passes everything else through. `ui.render` draws the band above the prompt and the pane.
+- Network: only `https://api.x.com` (X API v2: users/me, media upload, tweets), and only when the user presses a button in the pane. Drafting uses Claude Code's own `$.model.fork` / `$.model.complete`. Nothing is downloaded or executed from the network.
+- Programs: `$.process.run` starts only `/usr/bin/python3 -I` with `scripts/odorokiya.py` (X API, keychain) or `scripts/media.py` (thumbnails, no network). Those run only `/usr/bin/security`, `/usr/bin/sips` and `/usr/bin/qlmanage` with fixed paths and arguments.
+- Credentials: `userConfig` with `sensitive: true` is the recommended path. The keychain is read only for the item the user created for this mod through the pane or the documented command, so that setup can be finished inside the pane. Keys never go on a command line.
+- No other plugins are called or required.
 
 ## セキュリティ
 

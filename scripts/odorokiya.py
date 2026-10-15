@@ -14,7 +14,6 @@
   odorokiya.py save-keys < JSON            -> 標準入力の 4 つの鍵をキーチェーンに保存して check と同じ結果
                                               (鍵はコマンドライン引数に載せない)
   odorokiya.py post --text T [--media P]...  -> {"ok": true, "id": "...", "url": "..."}
-  odorokiya.py thumb PATH [--size N]       -> {"ok": true, "b64": "<jpeg>", "w": W, "h": H, "duration": 秒|null}
 結果は常に JSON 1 行を stdout に出す。標準ライブラリのみ。
 """
 import argparse
@@ -25,10 +24,8 @@ import json
 import mimetypes
 import os
 import secrets
-import shutil
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -252,68 +249,6 @@ def cmd_post(args):
     return {"ok": True, "id": tid, "url": url}
 
 
-def run_quiet(argv):
-    return subprocess.run(argv, capture_output=True, text=True, timeout=20)
-
-
-def jpeg_size(data):
-    # JPEG の SOF から幅と高さを読む
-    i = 2
-    while i < len(data) - 9:
-        if data[i] != 0xFF:
-            i += 1
-            continue
-        marker = data[i + 1]
-        if marker in (0xC0, 0xC1, 0xC2):
-            return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
-        i += 2 + int.from_bytes(data[i + 2:i + 4], "big")
-    return 0, 0
-
-
-def video_duration(path):
-    probe = shutil.which("ffprobe") or next((p for p in ("/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe") if os.path.exists(p)), None)
-    if probe:
-        r = run_quiet([probe, "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", path])
-        try:
-            return round(float(r.stdout.strip()))
-        except ValueError:
-            pass
-    md = run_quiet(["/usr/bin/mdls", "-raw", "-name", "kMDItemDurationSeconds", path]).stdout.strip()
-    try:
-        return round(float(md))
-    except ValueError:
-        return None
-
-
-def cmd_thumb(args):
-    path = args.path
-    if not os.path.isfile(path):
-        raise Fail(f"ファイルがありません: {path}")
-    mime = mimetypes.guess_type(path)[0] or ""
-    work = tempfile.mkdtemp(prefix="odorokiya-thumb-")
-    try:
-        src = path
-        duration = None
-        if mime.startswith("video/"):
-            # Quick Look で先頭付近のフレームを PNG にする
-            run_quiet(["/usr/bin/qlmanage", "-t", "-s", str(args.size * 2), "-o", work, path])
-            pngs = [f for f in os.listdir(work) if f.endswith(".png")]
-            if not pngs:
-                raise Fail("動画のサムネイルを作れませんでした")
-            src = os.path.join(work, pngs[0])
-            duration = video_duration(path)
-        out = os.path.join(work, "thumb.jpg")
-        r = run_quiet(["/usr/bin/sips", "-s", "format", "jpeg", "-s", "formatOptions", "62",
-                       "-Z", str(args.size), src, "--out", out])
-        if r.returncode != 0 or not os.path.isfile(out):
-            raise Fail("サムネイルの変換に失敗しました")
-        data = open(out, "rb").read()
-        w, h = jpeg_size(data)
-        return {"ok": True, "b64": base64.b64encode(data).decode(), "w": w, "h": h, "duration": duration}
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
-
-
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -322,12 +257,9 @@ def main():
     p = sub.add_parser("post")
     p.add_argument("--text", required=True)
     p.add_argument("--media", action="append")
-    t = sub.add_parser("thumb")
-    t.add_argument("path")
-    t.add_argument("--size", type=int, default=200)
     args = ap.parse_args()
     try:
-        out = {"check": cmd_check, "save-keys": cmd_save_keys, "post": cmd_post, "thumb": cmd_thumb}[args.cmd](args)
+        out = {"check": cmd_check, "save-keys": cmd_save_keys, "post": cmd_post}[args.cmd](args)
     except Fail as err:
         out = {"ok": False, "error": str(err), "code": err.code}
     except Exception as err:  # noqa: BLE001

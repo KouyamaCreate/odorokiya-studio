@@ -252,7 +252,7 @@ export const register: Register = (on, options) => {
       for (const [i, m] of found.entries()) {
         if (known.has(m.path) || i >= 4) continue
         try {
-          const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
+          const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/media.py', 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
           found[i] = withThumb(m, parseThumb(run.stdout))
         } catch {
           // サムネイルが無くても素材としては使える
@@ -286,7 +286,7 @@ export const register: Register = (on, options) => {
     }
     for (const [i, m] of found.entries()) {
       try {
-        const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
+        const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/media.py', 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
         found[i] = withThumb(m, parseThumb(run.stdout))
       } catch {
         // サムネイル無しで続ける
@@ -301,7 +301,7 @@ export const register: Register = (on, options) => {
     await update($, status, () => ({ kind: 'idle' }) as OdorokiyaStatus)
     if ((await read($, account)) === '') {
       try {
-        const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'check'], { env, timeoutMs: 20_000 })
+        const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'check'], { env, timeoutMs: 20_000 })
         const out = parseResult(run.stdout)
         if (out.ok && out.username) await update($, account, () => out.username ?? '')
         else await update($, setupNote, () => ({ message: out.error ?? '接続できませんでした', isError: out.code !== 'nokeys' }))
@@ -359,7 +359,7 @@ export const register: Register = (on, options) => {
     const filled: OdorokiyaMedia[] = []
     for (const m of missing) {
       try {
-        const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
+        const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/media.py', 'thumb', m.path, '--size', String(THUMB_SIZE)], { env, timeoutMs: 15_000 })
         filled.push(withThumb(m, parseThumb(run.stdout)))
       } catch {
         // 消えたファイルなどは飛ばす
@@ -371,7 +371,7 @@ export const register: Register = (on, options) => {
     if (latest && (await read($, selected)).length === 0) await update($, selected, () => [latest.path])
     if ((await read($, account)) === '') {
       try {
-        const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'check'], { env, timeoutMs: 20_000 })
+        const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'check'], { env, timeoutMs: 20_000 })
         const out = parseResult(run.stdout)
         if (out.ok && out.username) await update($, account, () => out.username ?? '')
         else await update($, setupNote, () => ({ message: out.error ?? '接続できませんでした', isError: out.code !== 'nokeys' }))
@@ -385,14 +385,14 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'odorokiya-studio-security' }, async $ => {
     try {
-      return { text: await $.fs.read(`${$.plugin.root}/SECURITY.md`) }
+      return { text: await $.fs.read($.plugin.root + '/SECURITY.md') }
     } catch {
       return { text: 'SECURITY.md を読めませんでした。https://github.com/KouyamaCreate/odorokiya-studio/blob/main/SECURITY.md を見てください。' }
     }
   })
 
   on('command.run', { command: 'odorokiya-studio-check' }, async $ => {
-    const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'check'], { env, timeoutMs: 30_000 })
+    const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'check'], { env, timeoutMs: 30_000 })
     const out = parseResult(run.stdout)
     if (out.ok && out.username) await update($, account, () => out.username ?? '')
     return { text: out.ok ? `X の認証 OK: @${out.username}` : `X の認証に失敗: ${out.error ?? run.stderr.slice(0, 300)}` }
@@ -455,7 +455,7 @@ export const register: Register = (on, options) => {
     let securityText = ''
     if (isSecurityOpen) {
       try {
-        securityText = await $.fs.read(`${$.plugin.root}/SECURITY.md`)
+        securityText = await $.fs.read($.plugin.root + '/SECURITY.md')
       } catch {
         securityText = 'SECURITY.md を読めませんでした。リポジトリの SECURITY.md を見てください。'
       }
@@ -473,7 +473,7 @@ export const register: Register = (on, options) => {
     const post = async () => {
       if (!canPost) return
       await update($, status, () => ({ kind: 'posting' }) as OdorokiyaStatus)
-      const argv = ['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'post', '--text', body, ...chosen.flatMap(m => ['--media', m.path])]
+      const argv = ['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'post', '--text', body, ...chosen.flatMap(m => ['--media', m.path])]
       try {
         const run = await $.process.run(argv, { env, timeoutMs: 600_000 })
         const out = parseResult(run.stdout)
@@ -498,7 +498,7 @@ export const register: Register = (on, options) => {
     }
 
     const check = async () => {
-      const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'check'], { env, timeoutMs: 30_000 })
+      const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'check'], { env, timeoutMs: 30_000 })
       const out = parseResult(run.stdout)
       if (out.ok && out.username) {
         await update($, account, () => out.username ?? '')
@@ -520,7 +520,7 @@ export const register: Register = (on, options) => {
         typed.clear()
         await update($, keyFilled, () => 0)
         await update($, keyRev, n => n + 1)
-        const run = await $.process.run(['/usr/bin/python3', '-I', `${$.plugin.root}/scripts/odorokiya.py`, 'save-keys'], {
+        const run = await $.process.run(['/usr/bin/python3', '-I', $.plugin.root + '/scripts/odorokiya.py', 'save-keys'], {
           stdin: JSON.stringify(draft),
           env: confirmEnv,
           timeoutMs: 60_000,
