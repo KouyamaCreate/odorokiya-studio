@@ -91,6 +91,11 @@ const THUMB_SIZE = 320
 const MAX_THUMBS = 24
 const LIMIT = 280
 
+// 一時フォルダの画像は拾わない。Claude が動作確認のために撮ったスクリーンショットなど、
+// 人に見せる前提ではないもの(会話や画面の中身が写りがち)が多いため。下書きツールで明示されたものは別。
+export const isTemporaryPath = (path: string): boolean =>
+  /^\/(private\/)?(tmp|var\/folders|var\/tmp)\//.test(path)
+
 // 文字列・配列・オブジェクトを辿ってメディアっぽいパスを集める(純関数)
 const collect = (value: unknown, cwd: string, out: Set<string>, depth = 0): void => {
   if (depth > 8 || out.size > 200) return
@@ -234,6 +239,7 @@ export const register: Register = (on, options) => {
       const now = Date.now()
       const found: OdorokiyaMedia[] = []
       for (const path of paths) {
+        if (isTemporaryPath(path)) continue
         try {
           const st = await $.fs.stat(path)
           if (st.kind === 'file' && st.size > 0)
@@ -303,6 +309,22 @@ export const register: Register = (on, options) => {
         // 未接続のまま
       }
     }
+    // 消えたファイルを一覧から外す
+    const vanished: string[] = []
+    for (const m of await read($, media)) {
+      try {
+        if (!(await $.fs.exists(m.path))) vanished.push(m.path)
+      } catch {
+        // 確かめられないものは残す
+      }
+    }
+    // 一時フォルダのものは、いま添付に選んでいるもの以外を外す(以前に拾ってしまった確認用画像など)
+    const keep = new Set(await read($, selected))
+    await update($, media, cur => cur.filter(m => !vanished.includes(m.path) && (!isTemporaryPath(m.path) || keep.has(m.path))))
+    // 新しい下書きが主役になるよう、前の候補や開きっぱなしの説明を片づける
+    await update($, candidates, () => [])
+    await update($, showSecurity, () => false)
+    if ((await read($, account)) !== '') await update($, setupOpen, () => false)
     await $.ui.open({ id: PANE, title: TITLE })
     const problem = selectionError(found)
     const note = [
@@ -320,6 +342,18 @@ export const register: Register = (on, options) => {
       await update($, text, () => e.args.trim())
       await update($, bodyRev, n => n + 1)
     }
+    // 消えたファイルを一覧と選択から外す
+    const gone: string[] = []
+    for (const m of await read($, media)) {
+      try {
+        if (!(await $.fs.exists(m.path))) gone.push(m.path)
+      } catch {
+        // 確かめられないものは残す
+      }
+    }
+    await update($, selected, cur => cur.filter(p => !gone.includes(p)))
+    const keepPicked = new Set(await read($, selected))
+    await update($, media, cur => cur.filter(m => !gone.includes(m.path) && (!isTemporaryPath(m.path) || keepPicked.has(m.path))))
     // サムネイルの無い直近の素材を補う
     const missing = (await read($, media)).slice(-8).filter(m => !m.thumb)
     const filled: OdorokiyaMedia[] = []

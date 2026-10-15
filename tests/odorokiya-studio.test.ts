@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { credentialEnv, isKeyAccess, parseCandidates, selectionError, weightedLength } from '../hooks/register'
+import { credentialEnv, isKeyAccess, isTemporaryPath, parseCandidates, selectionError, weightedLength } from '../hooks/register'
 
 const img = (name: string, size = 1000) => ({ path: `/tmp/${name}`, name, kind: 'image' as const, size, at: 0 })
 const vid = { path: '/tmp/demo.mp4', name: 'demo.mp4', kind: 'video' as const, size: 1000, at: 0 }
@@ -139,4 +139,11 @@ test('セキュリティの説明をコマンドで読める', async ($, on) => 
   on('fs.read', () => ({ value: '# 鍵の扱いとセキュリティ' }))
   const out = await $.command.run({ command: 'odorokiya-studio-security' } as never)
   expect(JSON.stringify(out)).toContain('鍵の扱いとセキュリティ')
+})
+
+test('一時フォルダの画像は素材として拾わない', async () => {
+  expect(isTemporaryPath('/tmp/screen.png')).toBe(true)
+  expect(isTemporaryPath('/private/tmp/claude-501/x/screenshot.png')).toBe(true)
+  expect(isTemporaryPath('/var/folders/ab/T/shot.png')).toBe(true)
+  expect(isTemporaryPath('/Users/me/project/demo.png')).toBe(false)
 })
