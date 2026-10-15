@@ -1,0 +1,21 @@
+# 変更履歴
+
+## 0.3.0 - 2026-10-15
+
+- 入力中の鍵を Claude Code の state に置かず、Mod のメモリだけに持つようにした。保存を押したら成否にかかわらず消す
+- Claude が Bash でこの Mod の鍵を読み出すコマンドを実行しようとしたら止める見張りを追加
+- 設定「キーチェーンの鍵を読むたびに確認する」を追加
+- SECURITY.md を追加。`/odorokiya-studio-security` とパネルからも読めるようにした
+
+## 0.2.0 - 2026-10-15
+
+- 名前を `x-post` から `odorokiya-studio` に変更。コマンドは `/odorokiya-studio` と `/odorokiya-studio-check`
+- X の鍵をプラグイン設定(sensitive な userConfig)から渡せるようにした。キーチェーンは service `odorokiya-studio` を読み、旧名 `x-post` も引き続き読む
+- パネルに「X とつなぐ」ウィザードを追加。手順の案内、Developer Console へのリンク、Callback URI のコピー、4 つの鍵の入力と保存、接続テストまでをパネルの中で終えられる
+- X のエラー(401 / 403 / 402 / 429)を、原因と直し方の言葉で出すようにした
+- 推敲に使うモデルと、入力欄の上の帯の表示を設定で変えられるようにした
+- 公開用に README、LICENSE(MIT)、marketplace.json を追加
+
+## 0.1.0 - 2026-10-15
+
+- 最初の版。素材の自動収集、サムネイル付きギャラリー、会話からの下書き、推敲、X と同じ割り付けのプレビュー、X API v2 での投稿

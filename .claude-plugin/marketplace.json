@@ -1,0 +1,15 @@
+{
+  "name": "odorokiya",
+  "description": "驚き屋スタジオ: TL を開かずに X へデモを投稿する Claude Code の Mod",
+  "owner": {
+    "name": "Kosei Yamamoto",
+    "url": "https://github.com/KouyamaCreate"
+  },
+  "plugins": [
+    {
+      "name": "odorokiya-studio",
+      "source": "./",
+      "description": "TL を開かずに、会話から驚き屋ツイートを推敲して素材付きで X に投稿する Mod"
+    }
+  ]
+}

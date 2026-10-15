@@ -1,0 +1,76 @@
+{
+  "name": "odorokiya-studio",
+  "displayName": "Odorokiya Studio",
+  "version": "0.3.0",
+  "description": "TL を開かずに、会話から驚き屋ツイートを下書き・推敲し、セッションで作った画像や動画を添えて X に投稿する Claude Code の Mod。",
+  "author": {
+    "name": "Kosei Yamamoto",
+    "url": "https://github.com/KouyamaCreate"
+  },
+  "homepage": "https://github.com/KouyamaCreate/odorokiya-studio",
+  "repository": "https://github.com/KouyamaCreate/odorokiya-studio",
+  "license": "MIT",
+  "keywords": [
+    "x",
+    "twitter",
+    "post",
+    "share",
+    "demo",
+    "mod",
+    "japanese"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "x_api_key": {
+      "type": "string",
+      "title": "X API Key",
+      "description": "X Developer Console のアプリの API Key(Consumer Key)。空ならキーチェーン(service=odorokiya-studio)を読みます。",
+      "sensitive": true,
+      "default": ""
+    },
+    "x_api_secret": {
+      "type": "string",
+      "title": "X API Secret",
+      "description": "X Developer Console のアプリの API Secret(Consumer Secret)。",
+      "sensitive": true,
+      "default": ""
+    },
+    "x_access_token": {
+      "type": "string",
+      "title": "X Access Token",
+      "description": "権限を Read and write にしたあとで発行した Access Token。",
+      "sensitive": true,
+      "default": ""
+    },
+    "x_access_token_secret": {
+      "type": "string",
+      "title": "X Access Token Secret",
+      "description": "上の Access Token と対になる Secret。",
+      "sensitive": true,
+      "default": ""
+    },
+    "keychain_confirm": {
+      "type": "boolean",
+      "title": "キーチェーンの鍵を読むたびに確認する",
+      "description": "オンにすると、パネルで保存し直した鍵は、読み出しのたびに macOS の確認ダイアログが出ます(投稿のたびに確認)。ほかのプロセスが黙って鍵を読むのを防げます。",
+      "default": false
+    },
+    "writer_model": {
+      "type": "string",
+      "title": "推敲に使うモデル",
+      "description": "推敲ボタンで案を出すモデル。「会話から下書き」はセッションと同じモデルを使います。",
+      "default": "sonnet",
+      "options": [
+        "sonnet",
+        "haiku",
+        "opus"
+      ]
+    },
+    "show_band": {
+      "type": "boolean",
+      "title": "入力欄の上に「驚き屋チャンス」を出す",
+      "description": "セッションで画像や動画ができたとき、入力欄の上に最新の素材とツイートボタンを出します。",
+      "default": true
+    }
+  }
+}

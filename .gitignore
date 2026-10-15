@@ -1,0 +1,6 @@
+# Claude Code が読み込み時に置く型定義と tsconfig
+.claude-plugin/types/
+tsconfig.json
+__pycache__/
+*.pyc
+.DS_Store
